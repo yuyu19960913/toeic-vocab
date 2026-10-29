@@ -1,0 +1,9 @@
+{
+  "name": "TOEIC 単語",
+  "short_name": "TOEIC単語",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fff8fb",
+  "theme_color": "#fff1f7",
+  "icons": []
+}

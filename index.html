@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fff1f7">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>🎀 TOEIC 単語 🎀</title>
+<style>
+:root{--pink:#efa4c5;--pink-deep:#cf78a0;--pale:#fff0f7;--paler:#fff8fb;--ink:#705363;--line:#f2d4e2;--muted:#ad91a0}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(180deg,#fff5fa,#fff 55%);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+main{width:min(100%,560px);margin:auto;padding:18px 15px 36px}.title{text-align:center;color:var(--pink-deep);font-size:25px;font-weight:800;margin:8px 0 22px}
+.panel{background:#fff;border:1.5px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 6px 20px #e9b5ce20;margin-bottom:14px}
+h2{font-size:18px;margin:0 0 14px;color:#bf7397}p{line-height:1.7}.muted{font-size:13px;color:var(--muted);line-height:1.65}
+.btn{display:block;width:100%;border:0;border-radius:16px;padding:14px 16px;margin:10px 0;font-size:16px;font-weight:700;cursor:pointer;background:var(--pale);color:#a95f83}
+.btn.primary{background:var(--pink);color:white}.btn.light{background:#fff;border:1px solid var(--line)}.btn:disabled{opacity:.38;cursor:not-allowed}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}label{display:block;font-size:14px;margin:12px 0 6px}input,select{font:inherit;border:1.5px solid var(--line);border-radius:12px;padding:11px;background:#fff;color:var(--ink);width:100%}
+.hidden{display:none!important}.choices{display:grid;gap:9px;margin:20px 0}.choice{background:#fff;border:1.5px solid var(--line);border-radius:15px;padding:13px;text-align:left;font-size:16px;color:var(--ink);cursor:pointer;overflow-wrap:anywhere}.choice.selected{background:#ffe5f0;border-color:#e88eb5;box-shadow:0 0 0 2px #f9c8dc}
+.progress{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted)}.word{font-size:29px;text-align:center;font-weight:800;margin:34px 0 12px;overflow-wrap:anywhere;min-height:40px}
+.overlay{position:fixed;inset:0;background:#7b596b88;display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}.overlaybox{max-width:440px;width:100%;background:#fff9fc;border:2px solid #f1bfd5;border-radius:25px;padding:25px;text-align:center;box-shadow:0 10px 40px #54314433}.overlaybox .meaning{font-size:22px;font-weight:700;margin:15px 0}
+.stat{font-size:25px;font-weight:800;text-align:center;color:#cb78a0}.wrongitem{padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.topnote{background:#fff4f9;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.65}.footer{text-align:center;font-size:12px;color:#b69aa8;margin-top:22px}
+</style>
+</head>
+<body><main>
+<div class="title">🎀 TOEIC 単語 🎀</div>
+<section id="home" class="panel">
+<h2>今日もコツコツいこう ♡</h2>
+<div id="dataStatus" class="topnote">まずはExcelを読み込んでね！</div>
+<button class="btn primary" id="normalBtn">通常モード</button>
+<button class="btn" id="reviewBtn">復習モード</button>
+<button class="btn light hidden" id="resumeBtn">続きから再開</button>
+<button class="btn light" id="settingsBtn">設定・Excel読み込み</button>
+<p class="muted">単語データと復習リストは、この端末のブラウザ内に保存されるよ。</p>
+</section>
+<section id="settings" class="panel hidden">
+<h2>設定・Excel読み込み</h2>
+<label>通常モードの問題数</label><select id="normalCount"><option value="10">10問</option><option value="20">20問</option><option value="30">30問</option><option value="50">50問</option></select>
+<label>復習モードの問題数</label><select id="reviewCount"><option value="10">10問</option><option value="20">20問</option><option value="30">30問</option><option value="50">50問</option></select>
+<label>単語データ（.xlsx / .csv）</label><input type="file" id="fileInput" accept=".xlsx,.csv,text/csv">
+<p class="muted">Excelの列は「単語番号」「英単語」「日本語訳」の順にしてね。1行目は見出し。読み込みに成功すると、今の単語データ・復習リスト・中断中のテストが新しいデータに置き換わるよ。</p>
+<div id="importMessage" class="topnote hidden" role="status"></div>
+<button class="btn primary" id="backHome">ホームに戻る</button>
+</section>
+<section id="range" class="panel hidden">
+<h2 id="rangeHeading">範囲を選んでね</h2>
+<div class="row"><button class="btn" data-range="1-50">1–50</button><button class="btn" data-range="51-100">51–100</button></div>
+<div class="row"><button class="btn" data-range="101-150">101–150</button><button class="btn" data-range="151-200">151–200</button></div>
+<label>開始番号</label><input type="number" id="rangeStart" min="1" placeholder="例：1">
+<label>終了番号</label><input type="number" id="rangeEnd" min="1" placeholder="例：50">
+<div id="rangeMessage" class="muted" aria-live="polite"></div>
+<button class="btn primary" id="startBtn">この範囲でスタート</button><button class="btn light" id="rangeBack">戻る</button>
+</section>
+<section id="quiz" class="panel hidden">
+<div class="progress"><span id="modeLabel"></span><span id="progressLabel">1 / 20 問</span></div>
+<div class="word" id="questionWord">word</div>
+<div class="choices" id="choices"></div>
+<button class="btn primary" id="checkBtn" disabled>結果を確認する</button>
+<button class="btn light" id="quitBtn">中断してホームへ</button>
+</section>
+<section id="results" class="panel hidden">
+<h2>テスト結果 ♡</h2><div class="stat" id="score"></div><p class="stat" id="accuracy"></p>
+<div id="wrongList"></div>
+<button class="btn primary" id="retestBtn">間違えた単語をもう一度</button><button class="btn light" id="resultsHome">ホームに戻る</button>
+</section>
+<div id="feedback" class="overlay hidden"><div class="overlaybox"><div id="feedbackTitle"></div><div class="meaning" id="feedbackMeaning"></div><p class="muted" id="feedbackEnglish"></p><button class="btn primary" id="nextBtn">次の問題</button></div></div>
+<div id="confirm" class="overlay hidden"><div class="overlaybox"><h2>テストを中断する？</h2><p>ここまでの進み具合を保存してホームに戻るよ。</p><button class="btn primary" id="confirmQuit">中断する</button><button class="btn light" id="cancelQuit">テストに戻る</button></div></div>
+<div class="footer">ふわっと、こつこつ。🎀</div>
+</main>
+<script>
+const $=id=>document.getElementById(id), KEY='toeic_vocab_complete_v2';
+const defaults=()=>({words:[],review:[],settings:{normal:20,review:20},session:null});
+let db=load(),mode='normal',range={start:1,end:50},quiz=null,selected=null;
+function load(){try{let x=JSON.parse(localStorage.getItem(KEY));if(!x)return defaults();return {...defaults(),...x,settings:{...defaults().settings,...(x.settings||{})}}}catch(e){return defaults()}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){alert('端末の保存容量が足りない可能性があるよ。不要なデータを整理してね。')}}
+function show(id){['home','settings','range','quiz','results'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function updateHome(){ $('dataStatus').textContent=db.words.length?`読み込み済み：${db.words.length}語　／　復習リスト：${db.review.length}語`:'まずはExcelを読み込んでね！';$('resumeBtn').classList.toggle('hidden',!db.session);$('normalBtn').disabled=!db.words.length;$('reviewBtn').disabled=!db.words.length||!db.review.length;$('normalCount').value=String(db.settings.normal);$('reviewCount').value=String(db.settings.review)}
+function home(){updateHome();show('home')}
+$('settingsBtn').onclick=()=>{updateHome();$('importMessage').classList.add('hidden');show('settings')};
+$('backHome').onclick=home;$('resultsHome').onclick=home;
+$('normalCount').onchange=()=>{db.settings.normal=+$('normalCount').value;save()};
+$('reviewCount').onchange=()=>{db.settings.review=+$('reviewCount').value;save()};
+$('normalBtn').onclick=()=>chooseMode('normal');$('reviewBtn').onclick=()=>chooseMode('review');
+function chooseMode(m){if(!db.words.length){show('settings');$('importMessage').textContent='まずはExcelを読み込んでね！';$('importMessage').classList.remove('hidden');return}mode=m;$('rangeHeading').textContent=m==='normal'?'通常モード：出題範囲を選んでね':'復習モード：復習する範囲を選んでね';$('rangeMessage').textContent=m==='review'?`復習リストにある単語だけが出題されるよ（${db.review.length}語）`:'';$('rangeStart').value='1';$('rangeEnd').value='50';show('range');updateRangeButtons()}
+function updateRangeButtons(){document.querySelectorAll('[data-range]').forEach(b=>{let [s,e]=b.dataset.range.split('-').map(Number);b.disabled=mode==='review'&&!db.words.some(w=>w.num>=s&&w.num<=e&&db.review.includes(w.num))})}
+document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>{let [s,e]=b.dataset.range.split('-');$('rangeStart').value=s;$('rangeEnd').value=e;$('rangeMessage').textContent=''});
+$('rangeBack').onclick=home;
+function getPool(){let words=db.words.filter(w=>w.num>=range.start&&w.num<=range.end);if(mode==='review')words=words.filter(w=>db.review.includes(w.num));return words}
+$('startBtn').onclick=()=>{let s=+$('rangeStart').value,e=+$('rangeEnd').value;if(!s||!e||s<1||e<s){$('rangeMessage').textContent='番号の範囲を確認してね。';return}range={start:s,end:e};let pool=getPool();if(!pool.length){$('rangeMessage').textContent=mode==='review'?'この範囲に復習する単語がないよ。別の範囲を選んでね。':'この範囲に出題できる単語がないよ。別の範囲を選んでね。';return}startQuiz(pool)};
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startQuiz(pool){let count=mode==='normal'?db.settings.normal:db.settings.review;quiz={mode,range:{...range},questions:shuffle(pool).slice(0,count),index:0,answers:[],poolNums:pool.map(w=>w.num)};selected=null;db.session=quiz;save();renderQuestion();show('quiz')}
+$('resumeBtn').onclick=()=>{if(db.session){quiz=db.session;mode=quiz.mode;range=quiz.range;renderQuestion();show('quiz')}};
+function renderQuestion(){if(!quiz)return;selected=null;let q=quiz.questions[quiz.index];if(!q){finish();return}$('modeLabel').textContent=quiz.mode==='normal'?'通常モード':'復習モード';$('progressLabel').textContent=`${quiz.index+1} / ${quiz.questions.length} 問`;$('questionWord').textContent=q.en;$('choices').innerHTML='';let otherWords=shuffle(db.words.filter(w=>w.num!==q.num&&w.jp!==q.jp));let opts=shuffle([q,...otherWords.slice(0,3)]);opts=opts.slice(0,Math.min(4,db.words.length));opts.forEach(w=>{let b=document.createElement('button');b.className='choice';b.textContent=w.jp;b.onclick=()=>{selected=w.num;document.querySelectorAll('.choice').forEach(c=>c.classList.toggle('selected',c===b));$('checkBtn').disabled=false};$('choices').appendChild(b)});$('checkBtn').disabled=true;save()}
+$('checkBtn').onclick=()=>{if(selected===null)return;let q=quiz.questions[quiz.index],correct=selected===q.num;quiz.answers.push({num:q.num,selected,correct});if(quiz.mode==='normal'&&!correct&&!db.review.includes(q.num))db.review.push(q.num);if(quiz.mode==='review'&&correct)db.review=db.review.filter(n=>n!==q.num);db.session=quiz;save();$('feedbackTitle').textContent=correct?'正解！ ♡':'もう一歩！';$('feedbackMeaning').textContent=q.jp;$('feedbackEnglish').textContent=q.en;$('nextBtn').textContent=quiz.index===quiz.questions.length-1?'結果を見る':'次の問題';$('feedback').classList.remove('hidden')};
+$('nextBtn').onclick=()=>{$('feedback').classList.add('hidden');quiz.index++;if(quiz.index>=quiz.questions.length)finish();else{db.session=quiz;save();renderQuestion()}};
+function finish(){let answers=quiz.answers||[],correct=answers.filter(a=>a.correct).length;$('score').textContent=`${correct} / ${answers.length} 問正解`;$('accuracy').textContent=`正答率 ${answers.length?Math.round(correct/answers.length*100):0}%`;$('wrongList').innerHTML='';let wrong=answers.filter(a=>!a.correct);if(!wrong.length){$('wrongList').innerHTML='<p class="stat">全問正解！🎉</p>'}else{let h=document.createElement('h2');h.textContent='間違えた単語';$('wrongList').appendChild(h);wrong.forEach(a=>{let w=db.words.find(x=>x.num===a.num);if(!w)return;let d=document.createElement('div');d.className='wrongitem';d.textContent=`${w.en} — ${w.jp}`;$('wrongList').appendChild(d)})}$('retestBtn').classList.toggle('hidden',!wrong.length);$('retestBtn').onclick=()=>{let nums=wrong.map(a=>a.num),pool=db.words.filter(w=>nums.includes(w.num));if(pool.length)startQuiz(pool)};db.session=null;quiz=null;save();updateHome();show('results')}
+$('quitBtn').onclick=()=> $('confirm').classList.remove('hidden');$('cancelQuit').onclick=()=> $('confirm').classList.add('hidden');$('confirmQuit').onclick=()=>{$('confirm').classList.add('hidden');db.session=quiz;save();quiz=null;home()};
+window.addEventListener('pagehide',()=>{if(quiz){db.session=quiz;save()}});
+// XLSX reader: parses the standard unencrypted .xlsx ZIP container, without a remote library.
+function unxml(s){return String(s||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&')}
+async function readZip(buf){let b=new Uint8Array(buf),dv=new DataView(buf),end=-1;for(let i=b.length-22;i>=Math.max(0,b.length-65557);i--){if(dv.getUint32(i,true)===0x06054b50){end=i;break}}if(end<0)throw Error('Excelファイルの形式を読み取れません');let n=dv.getUint16(end+10,true),p=dv.getUint32(end+16,true),files={};for(let i=0;i<n;i++){if(dv.getUint32(p,true)!==0x02014b50)throw Error('Excelファイルの構造を読み取れません');let method=dv.getUint16(p+10,true),size=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true),name=new TextDecoder().decode(b.slice(p+46,p+46+nl)),ln=dv.getUint16(off+26,true),le=dv.getUint16(off+28,true),start=off+30+ln+le,raw=b.slice(start,start+size);if(method===0)files[name]=raw;else if(method===8){if(!('DecompressionStream'in window))throw Error('このブラウザではExcelの展開に対応していません。CSV UTF-8で保存して読み込んでね。');let stream=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));files[name]=new Uint8Array(await new Response(stream).arrayBuffer())}else throw Error('未対応の圧縮形式です');p+=46+nl+el+cl}return files}
+async function readXlsx(buf){let files=await readZip(buf),get=k=>files[k]?new TextDecoder().decode(files[k]):'';let shared=[],ss=get('xl/sharedStrings.xml');for(let m of ss.matchAll(/<si(?:\s[^>]*)?>([\s\S]*?)<\/si>/g))shared.push([...m[1].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)].map(x=>unxml(x[1])).join(''));let sheet=get('xl/worksheets/sheet1.xml');if(!sheet)throw Error('1枚目のシートが見つかりません');let rows=[];for(let rm of sheet.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/g)){let row=[];for(let cm of rm[1].matchAll(/<c([^>]*)>([\s\S]*?)<\/c>/g)){let ref=(cm[1].match(/\br="([A-Z]+)\d+"/)||[])[1]||'A',col=0;for(let ch of ref)col=col*26+ch.charCodeAt(0)-64;let typ=(cm[1].match(/\bt="([^"]+)"/)||[])[1],v=(cm[2].match(/<v>([\s\S]*?)<\/v>/)||[])[1]||'',inline=[...cm[2].matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)].map(x=>unxml(x[1])).join('');row[col-1]=typ==='s'?shared[+v]||'':typ==='inlineStr'?inline:unxml(v)}rows.push(row)}return rows}
+function parseCsv(t){let rows=[],row=[],v='',quoted=false;for(let i=0;i<t.length;i++){let c=t[i];if(c==='"'&&quoted&&t[i+1]==='"'){v+='"';i++}else if(c==='"')quoted=!quoted;else if(c===','&&!quoted){row.push(v);v=''}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&t[i+1]==='\n')i++;row.push(v);if(row.some(x=>x!==''))rows.push(row);row=[];v=''}else v+=c}row.push(v);if(row.some(x=>x!==''))rows.push(row);return rows}
+$('fileInput').onchange=async ev=>{let f=ev.target.files[0];if(!f)return;try{let rows=f.name.toLowerCase().endsWith('.csv')?parseCsv(await f.text()):await readXlsx(await f.arrayBuffer());if(!rows.length)throw Error('データが空です');let headers=rows[0].map(x=>String(x??'').trim()),idx=['単語番号','英単語','日本語訳'].map(x=>headers.indexOf(x));if(idx.some(x=>x<0))throw Error('1行目に「単語番号」「英単語」「日本語訳」の見出しが必要です');let words=[];for(let i=1;i<rows.length;i++){let r=rows[i],num=Number(String(r[idx[0]]??'').trim()),en=String(r[idx[1]]??'').trim(),jp=String(r[idx[2]]??'').trim();if(!en&&!jp&&!String(r[idx[0]]??'').trim())continue;if(!Number.isFinite(num)||num<1||!Number.isInteger(num)||!en||!jp)throw Error(`${i+1}行目を確認してね。番号・英単語・日本語訳を入力してね。`);words.push({num,en,jp})}if(!words.length)throw Error('読み込める単語がありません');db.words=words;db.review=[];db.session=null;save();$('importMessage').textContent=`読み込み成功！ ${words.length}語を登録したよ。`;updateHome();updateRangeButtons()}catch(err){$('importMessage').textContent='読み込みできなかったよ：'+err.message+' 元の単語データは変更していません。'}finally{$('importMessage').classList.remove('hidden');ev.target.value=''}};
+updateHome();if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script></body></html>
